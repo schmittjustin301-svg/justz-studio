@@ -23,7 +23,19 @@ export interface ToolOverrides {
  * Aus dem Finder gestartete Mac-Apps kennen den Homebrew-PATH nicht, deshalb suchen wir zusätzlich
  * an den üblichen Orten (Apple Silicon: /opt/homebrew, Intel: /usr/local).
  */
-const EXTRA_DIRS = ['/opt/homebrew/bin', '/usr/local/bin', '/opt/local/bin', '/usr/bin']
+const UNIX_DIRS = ['/opt/homebrew/bin', '/usr/local/bin', '/opt/local/bin', '/usr/bin']
+
+/** Windows: whisper.cpp gibt es nur als ZIP – wir suchen in den Ordnern, die die README empfiehlt. */
+const WINDOWS_DIRS = [
+  'C:\\whisper',
+  'C:\\whisper\\Release',
+  'C:\\ffmpeg\\bin',
+  // winget legt hier Verknüpfungen an (z. B. für Gyan.FFmpeg)
+  join(process.env.LOCALAPPDATA ?? '', 'Microsoft', 'WinGet', 'Links')
+]
+
+const IS_WINDOWS = process.platform === 'win32'
+const EXTRA_DIRS = IS_WINDOWS ? WINDOWS_DIRS : UNIX_DIRS
 
 function isExecutable(p: string): boolean {
   try {
@@ -42,7 +54,7 @@ export function findBinary(names: string[], override?: string, preferDirs: strin
   const dirs = [...preferDirs, ...(process.env.PATH ?? '').split(delimiter), ...EXTRA_DIRS].filter(Boolean)
   for (const name of names) {
     for (const dir of dirs) {
-      const p = join(dir, name)
+      const p = join(dir, IS_WINDOWS ? `${name}.exe` : name)
       if (existsSync(p) && isExecutable(p)) return p
     }
   }
@@ -78,14 +90,16 @@ export interface ToolProblem {
 
 export function toolProblems(t: Tools): ToolProblem[] {
   const p: ToolProblem[] = []
-  if (!t.ffmpeg || !t.ffprobe) p.push({ severity: 'error', message: 'FFmpeg wurde nicht gefunden. Installieren mit: brew install ffmpeg' })
+  const brew = !IS_WINDOWS
+  if (!t.ffmpeg || !t.ffprobe)
+    p.push({ severity: 'error', message: brew ? 'FFmpeg wurde nicht gefunden. Installieren mit: brew install ffmpeg' : 'FFmpeg wurde nicht gefunden. Installieren mit: winget install Gyan.FFmpeg – danach die App neu starten.' })
   else {
     for (const f of ['subtitles', 'loudnorm', 'sidechaincompress']) {
-      if (!t.filters.includes(f)) p.push({ severity: 'error', message: `FFmpeg-Filter "${f}" fehlt. Bitte die volle Version installieren: brew install ffmpeg-full` })
+      if (!t.filters.includes(f)) p.push({ severity: 'error', message: `FFmpeg-Filter "${f}" fehlt. Bitte die volle Version installieren: ${brew ? 'brew install ffmpeg-full' : 'winget install Gyan.FFmpeg'}` })
     }
-    if (!t.filters.includes('zscale')) p.push({ severity: 'warning', message: 'FFmpeg ohne zscale: iPhone-HDR-Videos wirken nach dem Export evtl. blass. Abhilfe: brew install ffmpeg-full' })
+    if (!t.filters.includes('zscale')) p.push({ severity: 'warning', message: 'FFmpeg ohne zscale: iPhone-HDR-Videos wirken nach dem Export evtl. blass. Abhilfe: ' + (brew ? 'brew install ffmpeg-full' : 'winget install Gyan.FFmpeg') })
   }
-  if (!t.whisper) p.push({ severity: 'warning', message: 'whisper.cpp nicht gefunden – Transkription nicht möglich. Installieren mit: brew install whisper-cpp' })
+  if (!t.whisper) p.push({ severity: 'warning', message: brew ? 'whisper.cpp nicht gefunden – Transkription nicht möglich. Installieren mit: brew install whisper-cpp' : 'whisper.cpp nicht gefunden – ZIP von GitHub nach C:\\whisper entpacken (siehe README) oder Pfad in den Einstellungen eintragen.' })
   return p
 }
 

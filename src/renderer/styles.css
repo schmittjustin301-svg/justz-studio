@@ -325,10 +325,13 @@ input[type='range']::-webkit-slider-thumb {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 0 14px 0 86px; /* Platz für die macOS-Fensterknöpfe */
+  padding: 0 14px;
   border-bottom: 1px solid var(--line);
   background: var(--bg);
   -webkit-app-region: drag;
+}
+body[data-platform='mac'] .topbar {
+  padding-left: 86px; /* Platz für die macOS-Fensterknöpfe */
 }
 .topbar > * {
   -webkit-app-region: no-drag;

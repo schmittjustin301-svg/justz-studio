@@ -2,7 +2,7 @@
 
 Lokale Video-Schnittsoftware von **JUSTZ Media Works**. Talking-Head-Videos und Kundenmaterial werden in Minuten zu postfertigen Reels: Pausen raus, Untertitel drauf, Hook rein, Musik drunter, Export für Instagram/TikTok.
 
-Alles läuft auf dem MacBook. Videos und Transkripte verlassen den Rechner nicht. Internet braucht ihr nur einmalig für das Whisper-Modell.
+Alles läuft lokal auf dem Rechner (macOS oder Windows). Videos und Transkripte verlassen den Rechner nicht. Internet braucht ihr nur einmalig für das Whisper-Modell.
 
 ---
 
@@ -73,6 +73,45 @@ npm run dist:mac
 ```
 
 Die DMG liegt danach in `release/`. Die App ist nicht von Apple signiert. Beim ersten Öffnen deshalb **Rechtsklick → Öffnen → Öffnen**.
+
+## Installation auf Windows (10/11)
+
+Alle Befehle in der **PowerShell** ausführen: Start-Menü → „PowerShell“ eintippen → Enter.
+
+### 1. Node.js, Git und FFmpeg
+
+```powershell
+winget install OpenJS.NodeJS.LTS Git.Git Gyan.FFmpeg
+```
+
+Danach die PowerShell **schließen und neu öffnen**, damit die neuen Programme gefunden werden. Prüfen:
+
+```powershell
+node -v
+ffmpeg -hide_banner -version
+```
+
+### 2. whisper.cpp (für die Transkription)
+
+1. [github.com/ggml-org/whisper.cpp/releases](https://github.com/ggml-org/whisper.cpp/releases) öffnen und beim neuesten Release die Datei **`whisper-bin-x64.zip`** herunterladen.
+2. Den Inhalt nach **`C:\whisper`** entpacken. Am Ende muss es die Datei `C:\whisper\Release\whisper-cli.exe` oder `C:\whisper\whisper-cli.exe` geben.
+
+Die App sucht dort automatisch. Liegt die Datei woanders, tragt den Pfad unter ⚙ → „Eigene Programmpfade“ ein.
+
+### 3. App holen und starten
+
+```powershell
+git clone https://github.com/schmittjustin301-svg/justz-studio.git $HOME\justz-studio
+cd $HOME\justz-studio
+npm install
+npm run dev
+```
+
+Beim `git clone` öffnet sich ein GitHub-Anmeldefenster, weil das Repo privat ist. Einfach im Browser anmelden.
+
+Danach unter ⚙ **Einstellungen** das Whisper-Modell laden, siehe Schritt 4 bei macOS. Die Modelle liegen unter Windows in `%APPDATA%\JUSTZ Studio\models`.
+
+**Als installierbare Windows-App bauen (optional):** `npm run dist:win`. Der Installer liegt danach in `release\`. Windows warnt beim ersten Start, weil die App nicht signiert ist: „Weitere Informationen“ → „Trotzdem ausführen“.
 
 ---
 
@@ -159,7 +198,7 @@ tests/           Vitest: Engine-Unit-Tests + Pipeline-Tests mit echtem FFmpeg
 - **Lautheit:** zweistufiges `loudnorm`, also erst messen, dann linear auf -14 LUFS / -1 dBTP.
 - **Ausgabe:** H.264 High (CRF 19 bzw. 16), AAC 192 kbit/s 48 kHz, `+faststart`.
 
-**Wo die Daten liegen** (`~/Library/Application Support/JUSTZ Studio/`)
+**Wo die Daten liegen** (Mac: `~/Library/Application Support/JUSTZ Studio/`, Windows: `%APPDATA%\JUSTZ Studio\`)
 - `settings.json`: Einstellungen
 - `presets.json`: eure Kunden-Presets
 - `models/`: Whisper-Modelle
